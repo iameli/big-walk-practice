@@ -1,0 +1,67 @@
+name: build-canary
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: canary
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REFS_URL: https://github.com/${{ github.repository }}/releases/download/practice-canary/build-refs.zip
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Download CI reference assemblies
+        shell: pwsh
+        run: |
+          $refs = Join-Path $env:GITHUB_WORKSPACE 'ci-refs'
+          New-Item -ItemType Directory -Force $refs | Out-Null
+          $refsZip = Join-Path $env:RUNNER_TEMP 'build-refs.zip'
+          Invoke-WebRequest -Uri $env:REFS_URL -OutFile $refsZip
+          Expand-Archive $refsZip -DestinationPath $refs -Force
+          Write-Host "refs ready at $refs"
+
+      - name: Build plugin
+        shell: pwsh
+        run: |
+          $proj = Join-Path $env:GITHUB_WORKSPACE 'bigwalk-mods/plugins/BigWalk.Practice/BigWalk.Practice.csproj'
+          dotnet build $proj -c Release -v m "/p:GamePath=$env:GITHUB_WORKSPACE/ci-refs"
+          if ($LASTEXITCODE -ne 0) { throw "Build failed" }
+
+      - name: Package canary artifacts
+        shell: pwsh
+        run: |
+          $dll = Get-ChildItem (Join-Path $env:GITHUB_WORKSPACE 'bigwalk-mods/plugins/BigWalk.Practice/bin') -Recurse -Filter 'BigWalk.Practice.dll' |
+                 Where-Object { $_.FullName -match '\\bin\\' -and $_.FullName -notmatch '\\obj\\' } |
+                 Select-Object -First 1
+          if (-not $dll) { throw "No build output found" }
+          Copy-Item $dll.FullName (Join-Path $env:GITHUB_WORKSPACE 'BigWalk.Practice.dll')
+          $stage = Join-Path $env:RUNNER_TEMP 'pkg'
+          New-Item -ItemType Directory -Force (Join-Path $stage 'BepInEx/plugins/BigWalk.Practice') | Out-Null
+          Copy-Item $dll.FullName (Join-Path $stage 'BepInEx/plugins/BigWalk.Practice/')
+          Compress-Archive (Join-Path $stage 'BepInEx') -DestinationPath (Join-Path $env:GITHUB_WORKSPACE 'BigWalk.Practice-canary.zip')
+
+      - name: Publish canary release assets
+        shell: pwsh
+        run: |
+          $tag = 'practice-canary'
+          gh release create $tag --latest --title 'Practice (canary)' --notes "Automated build from commit $($env:GITHUB_SHA.Substring(0,8))." --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
+          gh release upload $tag --clobber `
+            (Join-Path $env:GITHUB_WORKSPACE 'BigWalk.Practice.dll') `
+            (Join-Path $env:GITHUB_WORKSPACE 'BigWalk.Practice-canary.zip') `
+            --repo $env:GITHUB_REPOSITORY
