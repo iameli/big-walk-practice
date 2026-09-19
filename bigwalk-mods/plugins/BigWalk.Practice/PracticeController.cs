@@ -41,6 +41,7 @@ public class PracticeController : MonoBehaviour
     private uint _noclipTargetId;
     private LayerMask _noclipExcludeLayers;
     private Rigidbody _noclipRb;
+    private bool _noclipLayersChanged;
 
     private PlayerCharacter _noclipPc;
 
@@ -890,6 +891,7 @@ public class PracticeController : MonoBehaviour
         {
             _noclipExcludeLayers = pc.rb.excludeLayers;
             pc.rb.excludeLayers = world;
+            _noclipLayersChanged = true;
         }
 
 
@@ -899,10 +901,14 @@ public class PracticeController : MonoBehaviour
 
     private void RestoreNoclip()
     {
-        if (_noclipRb != null && _noclipExcludeLayers.value != 0)
+        if (_noclipRb != null && _noclipLayersChanged)
         {
+            // The pre-noclip mask is usually 'Nothing' (0) - restore by flag,
+            // not by value, or the ghost mask is never undone.
             _noclipRb.excludeLayers = _noclipExcludeLayers;
             _noclipExcludeLayers = default;
+            _noclipLayersChanged = false;
+            _noclipRb.WakeUp();
         }
 
         if (_noclipRb != null)
@@ -917,6 +923,7 @@ public class PracticeController : MonoBehaviour
             _noclipPc = null;
         }
 
+        _noclipLayersChanged = false;
         _noclipRb = null;
         _noclipTargetId = 0;
     }
