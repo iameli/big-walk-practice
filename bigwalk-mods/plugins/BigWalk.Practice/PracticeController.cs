@@ -39,7 +39,7 @@ public class PracticeController : MonoBehaviour
 
     private bool _noclip;
     private uint _noclipTargetId;
-    private readonly List<Collider> _noclipColliders = new();
+    private LayerMask _noclipExcludeLayers;
     private Rigidbody _noclipRb;
 
     private PlayerCharacter _noclipPc;
@@ -882,15 +882,16 @@ public class PracticeController : MonoBehaviour
         _noclipRb = pc.rb;
         _noclipPc = pc;
         pc.bypassFixedUpdate = true;
-        _noclipColliders.Clear();
-        foreach (var c in target.gameObject.GetComponentsInChildren<Collider>(true))
+        // Keep the body's colliders alive (the game's look/shepherd/camera
+        // systems read them every frame) and instead make the rigidbody
+        // ignore the world's layers - walls become ghost geometry.
+        var world = pc.shepherd != null ? pc.shepherd.layerMask : default;
+        if (world.value != 0)
         {
-            if (c != null && c.enabled)
-            {
-                _noclipColliders.Add(c);
-                c.enabled = false;
-            }
+            _noclipExcludeLayers = pc.rb.excludeLayers;
+            pc.rb.excludeLayers = world;
         }
+
 
         _noclip = true;
         return true;
@@ -898,15 +899,12 @@ public class PracticeController : MonoBehaviour
 
     private void RestoreNoclip()
     {
-        foreach (var c in _noclipColliders)
+        if (_noclipRb != null && _noclipExcludeLayers.value != 0)
         {
-            if (c != null)
-            {
-                c.enabled = true;
-            }
+            _noclipRb.excludeLayers = _noclipExcludeLayers;
+            _noclipExcludeLayers = default;
         }
 
-        _noclipColliders.Clear();
         if (_noclipRb != null)
         {
             _noclipRb.linearVelocity = Vector3.zero;
