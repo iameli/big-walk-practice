@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/plugins/">
+    <Project Path="plugins/BigWalk.DevMenu/BigWalk.DevMenu.csproj" />
+    <Project Path="plugins/BigWalk.Practice/BigWalk.Practice.csproj" />
+    <Project Path="plugins/BigWalk.SkipIntro/BigWalk.SkipIntro.csproj" />
+  </Folder>
+</Solution>

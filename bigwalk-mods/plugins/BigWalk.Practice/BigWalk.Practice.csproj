@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>BigWalk.Practice</AssemblyName>
+    <Version>0.1.0</Version>
+    <Description>Spawn extra player bodies and hot-swap control for speedrun rehearsal.</Description>
+  </PropertyGroup>
+
+</Project>
