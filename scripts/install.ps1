@@ -57,7 +57,7 @@ if (-not $PluginsOnly) {
 $pluginDir = Join-Path $game 'BepInEx\plugins'
 New-Item -ItemType Directory -Force $pluginDir | Out-Null
 
-$built = Get-ChildItem (Join-Path $repo 'plugins') -Recurse -Filter '*.dll' -ErrorAction SilentlyContinue |
+$built = Get-ChildItem (Join-Path $repo 'mods') -Recurse -Filter '*.dll' -ErrorAction SilentlyContinue |
          Where-Object { $_.FullName -match '\\bin\\' -and $_.FullName -notmatch '\\obj\\' }
 
 # Drop our previously-deployed DLLs first. Renaming or merging a plugin otherwise
@@ -77,7 +77,7 @@ if ($built) {
         Write-Host "  plugin -> $($dll.Name)"
     }
 } else {
-    Write-Host "  (no built plugins yet - run scripts\build.ps1 after the first game launch)"
+    Write-Host "  (no built mods yet - run scripts\build.ps1 after the first game launch)"
 }
 
 Write-Host ""

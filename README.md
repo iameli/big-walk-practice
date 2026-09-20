@@ -1,6 +1,10 @@
-# Big Walk — Practice
+# Big Walk Mods
 
-A practice tool for the co-op game [Big Walk](https://bigwalk.game/) (House House / Panic): spawn extra player bodies in a solo or small-hosted walk and hot-swap control between them, so routes that need a full lobby can be rehearsed alone.
+A monorepo of [Big Walk](https://bigwalk.game/) (House House / Panic) practice & utility mods — BepInEx 6 (IL2CPP) plugins with shared build tooling, automated canary releases, and live download links.
+
+## BigWalk.Practice
+
+A practice tool: spawn extra player bodies in a solo or small-hosted walk and hot-swap control between them, so routes that need a full lobby can be rehearsed alone.
 
 - **Spawn** extra bodies next to the active player (`+`), with random multiplayer colors
 - **Swap** control instantly (number keys `1`–`0`), camera / audio listener / look mode handed off cleanly
@@ -31,9 +35,14 @@ Requires **BepInEx 6 IL2CPP** (6.0.755 pack or newer bleeding-edge) on the curre
 | `F5` / `F9` | Save / restore formation checkpoint |
 | `G` | Toggle body noclip (WASD + Space/Ctrl, Shift = fast) |
 | `F1` | Config UI (BepInExConfigManager) |
-| `F2` / `F3` | Dev menu / free camera (bigwalk-mods DevMenu) |
+| `F2` / `F3` | Dev menu / free camera (DevMenu mod) |
 
 All keys are configurable in `BepInEx\config\com.bigwalk.practice.cfg`.
+
+
+## Other mods
+
+More mods (DevMenu, SkipIntro, …) live under `mods\` and get their own canary releases (`<name>-canary`). See `mods\` for the current set.
 
 ## Configuration
 
@@ -42,23 +51,35 @@ All keys are configurable in `BepInEx\config\com.bigwalk.practice.cfg`.
 - `MaxExtraBodies` — 1–9 extras
 - `NoclipSpeed`, `NoDrowsy`, and the key binds
 
-## Development
+## Development (monorepo)
+
+Layout: every mod is `mods\<Name>\` with a minimal csproj; shared settings
+(target framework, BepInEx/Unity/game references) come from the repo-root
+`Directory.Build.props`, imported automatically for every mod. Tooling lives
+in `scripts\`.
 
 ```
-.\scripts\export-build-refs.ps1   # zip core+interop refs for CI (after game updates)
-.\build-deploy.ps1                # build + deploy into the r2modman profile
+.\scripts\build.ps1 -Deploy         # build all mods and deploy into the r2modman profile
+.\scripts\new-mod.ps1 -Name Thing   # scaffold a new mod under mods\
+.\scripts\export-build-refs.ps1     # zip core+interop refs for CI (re-run after game updates)
+.\scripts\install.ps1               # manual game-folder loader install (fallback path)
 ```
 
-- BepInEx 6.0.755 (Thunderstore pack) IL2CPP, interop from `%APPDATA%\r2modmanPlus-local\BigWalk\profiles\Default\BepInEx`
-- CI (`.github/workflows/build.yml`) builds against a `build-refs.zip` release asset and republishes the canary DLL on every push. When a Big Walk update lands: run `export-build-refs.ps1`, then `gh release upload practice-canary --clobber dist\ci-refs\build-refs.zip`
+- Refs: BepInEx 6.0.755 (Thunderstore pack) IL2CPP, interop generated in
+  `%APPDATA%\r2modmanPlus-local\BigWalk\profiles\Default\BepInEx`
+- CI (`.github/workflows/build.yml`) builds every mod against a
+  `build-refs.zip` asset and republishes each mod's canary release on every
+  push. After a Big Walk update: run `export-build-refs.ps1`, then
+  `gh release upload practice-canary --clobber dist\ci-refs\build-refs.zip`
 - Reverse-engineering notes: `NOTES-phase1.md` (spawn path, Mirror ownership, player object model)
 - Playtest protocol: `PLAYTEST.md`
-- Template + toolchain: [dougwithseismic/bigwalk-mods](https://github.com/dougwithseismic/bigwalk-mods)
+- Layout + tooling derived from [dougwithseismic/bigwalk-mods]
+  (https://github.com/dougwithseismic/bigwalk-mods); third-party licenses in `docs\licenses\`
 
 ## Credits
 
 - **Big Solo Walk** ([Nexus](https://www.nexusmods.com/bigwalk/mods/42)) by StellaLunyari — the community mod that first solved spawning/swapping; its approach informed this architecture
-- [dougwithseismic/bigwalk-mods](https://github.com/dougwithseismic/bigwalk-mods) — BepInEx IL2CPP template, install tooling, modding guide
+- [dougwithseismic/bigwalk-mods](https://github.com/dougwithseismic/bigwalk-mods) — template, tooling, modding guide (MIT; see `docs\licenses\`)
 - BepInEx, Il2CppInterop, Harmony, Mirror (game modding ecosystem)
 
 ## License

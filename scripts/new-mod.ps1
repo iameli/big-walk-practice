@@ -20,7 +20,7 @@ if ($Name -notmatch '^[A-Za-z][A-Za-z0-9_]*$') {
 
 $repo = Split-Path $PSScriptRoot -Parent
 $assembly = "BigWalk.$Name"
-$dir = Join-Path $repo "plugins\$assembly"
+$dir = Join-Path $repo "mods\$assembly"
 if (Test-Path $dir) { throw "$dir already exists." }
 if (-not $Description) { $Description = "$Name for Big Walk." }
 
@@ -38,8 +38,8 @@ New-Item -ItemType Directory -Force $dir | Out-Null
 </Project>
 "@ | Set-Content (Join-Path $dir "$assembly.csproj") -Encoding UTF8
 
-# References, target framework and analyzer settings all come from
-# plugins\Directory.Build.props, so the generated csproj stays this small.
+# References, target framework and analyzer settings all come from the shared
+# Directory.Build.props at the repo root, so the generated csproj stays small.
 @"
 using BepInEx;
 using BepInEx.Unity.IL2CPP;
@@ -84,5 +84,5 @@ $sln = Get-ChildItem $repo -Filter '*.slnx' | Select-Object -First 1
 if ($sln) { & dotnet sln $sln.FullName add (Join-Path $dir "$assembly.csproj") }
 
 Write-Host ""
-Write-Host "Created plugins\$assembly" -ForegroundColor Green
+Write-Host "Created mods\$assembly" -ForegroundColor Green
 Write-Host "  .\scripts\build.ps1 -Deploy   to build and install it"

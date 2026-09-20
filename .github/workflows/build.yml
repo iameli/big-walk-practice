@@ -36,32 +36,47 @@ jobs:
           Expand-Archive $refsZip -DestinationPath $refs -Force
           Write-Host "refs ready at $refs"
 
-      - name: Build plugin
+      - name: Build all mods
         shell: pwsh
         run: |
-          $proj = Join-Path $env:GITHUB_WORKSPACE 'bigwalk-mods/plugins/BigWalk.Practice/BigWalk.Practice.csproj'
-          dotnet build $proj -c Release -v m "/p:GamePath=$env:GITHUB_WORKSPACE/ci-refs"
+          & "$env:GITHUB_WORKSPACE\scripts\build.ps1" -Profile "$env:GITHUB_WORKSPACE/ci-refs"
           if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
-      - name: Package canary artifacts
+      - name: Package and publish per-mod canary releases
         shell: pwsh
         run: |
-          $dll = Get-ChildItem (Join-Path $env:GITHUB_WORKSPACE 'bigwalk-mods/plugins/BigWalk.Practice/bin') -Recurse -Filter 'BigWalk.Practice.dll' |
-                 Where-Object { $_.FullName -match '\\bin\\' -and $_.FullName -notmatch '\\obj\\' } |
-                 Select-Object -First 1
-          if (-not $dll) { throw "No build output found" }
-          Copy-Item $dll.FullName (Join-Path $env:GITHUB_WORKSPACE 'BigWalk.Practice.dll')
-          $stage = Join-Path $env:RUNNER_TEMP 'pkg'
-          New-Item -ItemType Directory -Force (Join-Path $stage 'BepInEx/plugins/BigWalk.Practice') | Out-Null
-          Copy-Item $dll.FullName (Join-Path $stage 'BepInEx/plugins/BigWalk.Practice/')
-          Compress-Archive (Join-Path $stage 'BepInEx') -DestinationPath (Join-Path $env:GITHUB_WORKSPACE 'BigWalk.Practice-canary.zip')
+          $mods = Get-ChildItem (Join-Path $env:GITHUB_WORKSPACE 'mods') -Directory |
+                  Where-Object { Test-Path (Join-Path $_.FullName "$($_.Name).csproj") }
+          if (-not $mods) { throw "no mods found" }
 
-      - name: Publish canary release assets
-        shell: pwsh
-        run: |
-          $tag = 'practice-canary'
-          gh release create $tag --latest --title 'Practice (canary)' --notes "Automated build from commit $($env:GITHUB_SHA.Substring(0,8))." --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
-          gh release upload $tag --clobber `
-            (Join-Path $env:GITHUB_WORKSPACE 'BigWalk.Practice.dll') `
-            (Join-Path $env:GITHUB_WORKSPACE 'BigWalk.Practice-canary.zip') `
-            --repo $env:GITHUB_REPOSITORY
+          foreach ($m in $mods) {
+              $name = $m.Name
+              $dll = Get-ChildItem (Join-Path $m.FullName 'bin') -Recurse -Filter "$name.dll" |
+                     Where-Object { $_.FullName -match '\\bin\\' -and $_.FullName -notmatch '\\obj\\' } |
+                     Select-Object -First 1
+              if (-not $dll) { Write-Error "no built dll for $name"; continue }
+
+              # BigWalk.Practice keeps its existing tag/assets so the shared
+              # download URLs keep working; other mods get <slug>-canary.
+              $slug = $name -replace '[^A-Za-z0-9]', '-'
+              $tag = if ($name -eq 'BigWalk.Practice') { 'practice-canary' } else { "$slug-canary" }
+              $isLatest = $name -eq 'BigWalk.Practice'
+
+              $stage = Join-Path $env:RUNNER_TEMP "pkg-$name"
+              Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
+              New-Item -ItemType Directory -Force (Join-Path $stage 'BepInEx\plugins') | Out-Null
+              Copy-Item $dll.FullName (Join-Path $stage 'BepInEx\plugins\') -Force
+              $zip = Join-Path $env:GITHUB_WORKSPACE "$name-canary.zip"
+              if (Test-Path $zip) { Remove-Item $zip -Force }
+              Compress-Archive (Join-Path $stage 'BepInEx') -DestinationPath $zip
+
+              $dllOut = Join-Path $env:GITHUB_WORKSPACE "$name.dll"
+              if (Test-Path $dllOut) { Remove-Item $dllOut -Force }
+              Copy-Item $dll.FullName $dllOut -Force
+
+              gh release create $tag --latest=$isLatest --title "$name (canary)" `
+                  --notes "Automated build from $($env:GITHUB_SHA.Substring(0,8))." `
+                  --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
+              gh release upload $tag --clobber $dllOut $zip --repo $env:GITHUB_REPOSITORY
+              Write-Host "published $name -> $tag"
+          }

@@ -1,5 +1,24 @@
+# Generated / regenerable
 out/
-bigwalk-mods/vendor/Cpp2IL/
-*.log
 dist/
 ci-refs/
+bin/
+obj/
+*.log
+*.dump
+
+# Vendored loader packs, RE tooling, CI refs snapshots - never commit
+# (re-download / regenerate; see docs/modding-guide.md)
+vendor/
+
+# IDE / OS
+.vs/
+.idea/
+*.user
+*.suo
+Thumbs.db
+desktop.ini
+
+# Decompiled game source - never committed (regenerable, copyrighted).
+gamesrc/
+cpp2il_out/

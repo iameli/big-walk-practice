@@ -4,8 +4,8 @@ Session: r2modman launch, host a lobby (2/3/4 any), one run covers all checks.
 Log: `%APPDATA%\r2modmanPlus-local\BigWalk\profiles\Default\BepInEx\LogOutput.log`
 
 ## Pre-flight (game closed)
-- [ ] Run `build-deploy.ps1` (or confirm profile plugins contain the latest
-      BigWalk.Practice.dll)
+- [ ] Run `.\scripts\build.ps1 -Deploy` (or confirm profile plugins contain the
+      latest BigWalk.Practice.dll)
 - [ ] After launch, log shows `Loading [Big Walk — Practice 0.6.0]` — that exact
       version string is the freshness check (previous builds were 0.2.0/0.5.0)
 - [ ] F1 conflict: DevMenu `MenuKey` moved off F1 in `BepInEx\config\com.bigwalk.devmenu.cfg`

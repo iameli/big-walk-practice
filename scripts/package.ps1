@@ -10,9 +10,9 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Author = 'n0__name',
+    [string]$Author = 'iameli',
     [string]$Configuration = 'Release',
-    [string]$WebsiteUrl = 'https://github.com/dougwithseismic/bigwalk-mods'
+    [string]$WebsiteUrl = 'https://github.com/iameli/big-walk-practice'
 )
 
 Set-StrictMode -Version Latest
@@ -33,7 +33,7 @@ New-Item -ItemType Directory -Force $dist | Out-Null
 # assuming 30 bleeding-edge builds apart are interchangeable.
 $dependencies = @('BepInEx-BepInExPack_IL2CPP-6.0.755')
 
-foreach ($proj in Get-ChildItem (Join-Path $repo 'plugins') -Recurse -Filter '*.csproj') {
+foreach ($proj in Get-ChildItem (Join-Path $repo 'mods') -Recurse -Filter '*.csproj') {
     [xml]$xml = Get-Content $proj.FullName
     $props = $xml.Project.PropertyGroup
 
