@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>BigWalk.ReplayLauncher</AssemblyName>
+    <Version>0.1.1</Version>
+    <Description>Starts Big Replay alongside a modded Big Walk launch.</Description>
+  </PropertyGroup>
+
+</Project>
